@@ -26,12 +26,13 @@ namespace ArchivIB
         OleDbCommand cmd = new OleDbCommand();
         OleDbDataReader dr;
         List<String> dataDiagList = new List<String>();
+        List<String> dataDepartList = new List<String>();
         public MainWindow()
         {
             InitializeComponent();
             cn.ConnectionString = @"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Program Files\ArchivIB\archiv.accdb;Persist Security Info=False;";
             cmd.Connection = cn;
-            this.DataContext = dataDiagList;
+            tb_diag.DataContext = dataDiagList;
             tb_diag.Loaded += delegate
             {
                 TextBox textBox = tb_diag.Template.FindName("PART_EditableTextBox", tb_diag) as TextBox;
@@ -52,6 +53,33 @@ namespace ArchivIB
                     };
                 }
             };
+
+            tb_depart.DataContext =dataDiagList;
+            tb_depart.Loaded += delegate
+            {
+                TextBox textbox2 = tb_depart.Template.FindName("PART_EditableTextBox", tb_depart) as TextBox;
+                Popup popup2 = tb_depart.Template.FindName("PART_Popup", tb_depart) as Popup;
+                if (textbox2 != null)
+                {
+                    textbox2.TextChanged += delegate
+                    {
+                        //popup2.IsOpen = true;
+                        tb_depart.Items.Filter += (item) =>
+                        {
+                            if (item.ToString().StartsWith(textbox2.Text))
+                            {
+                                popup2.IsOpen = true;
+                                return true;
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        };
+                    };
+                }
+            };
+            tb_depart.KeyDown += new System.Windows.Input.KeyEventHandler(tb_depart_KeyDown);
         }
 
         private void loadDiagData()
@@ -72,6 +100,27 @@ namespace ArchivIB
             {
                 cn.Close();
                 MessageBox.Show("" + ex);
+            }
+        }
+
+        private void loadDepartData()
+        {
+            try
+            {
+                cmd.CommandText = "select distinct Отделение from ФИО";
+                cn.Open();
+                dr = cmd.ExecuteReader();
+                while (dr.Read())
+                {
+                    dataDepartList.Add(dr[0].ToString());
+                }
+                dr.Close();
+                cn.Close();
+            }
+            catch (Exception ex)
+            {
+                cn.Close();
+                MessageBox.Show(ex+"");
             }
         }
 
@@ -109,6 +158,7 @@ namespace ArchivIB
             tbNumberList.Text = lastList().ToString();
             loadDataGrid();
             loadDiagData();
+            loadDepartData();
             //for (Int32 i = 0; i < 100; i++)
             //{
             //    dataDiagList.Add(i.ToString() + "Item");
@@ -240,7 +290,11 @@ namespace ArchivIB
 
         private void tb_depart_KeyDown(object sender, KeyEventArgs e)
         {
-
+            if (e.Key == Key.Down)
+            {
+                e.Handled = true;
+                tb_depart.Items.MoveCurrentToNext();
+            }
         }
     }
 }
